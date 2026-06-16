@@ -1,0 +1,17 @@
+environments:
+  dev:
+    storage_account: "sadatabanketldev01"
+    container_raw: "raw"
+    container_processed: "processed"
+    container_curated: "curated"
+
+    source_file: "creditcard.csv"
+
+    bronze_path: "abfss://processed@sadatabanketldev01.dfs.core.windows.net/bronze/transactions/"
+    silver_path: "abfss://processed@sadatabanketldev01.dfs.core.windows.net/silver/transactions/"
+    gold_path:   "abfss://curated@sadatabanketldev01.dfs.core.windows.net/gold/"
+
+data_quality:
+  min_amount: 0.0
+  max_amount: 1000000.0
+  max_time_value: 172800.0
