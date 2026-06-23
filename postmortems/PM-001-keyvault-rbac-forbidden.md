@@ -28,3 +28,16 @@ Option A → Switch permission model to "Vault access policy"
 Option B → Immediately assign Key Vault Secrets Officer
            role after creation before attempting any
            secret operations.
+
+## Follow-up issue — Databricks identity also needs Key Vault access
+
+After fixing personal account access, notebook threw
+Py4JJavaError: PERMISSION_DENIED on dbutils.secrets.get()
+
+Cause: Databricks uses its own managed identity (AzureDatabricks)
+to call Key Vault at runtime — separate from your personal account.
+Both identities need Key Vault access independently.
+
+Fix: Assigned "Key Vault Secrets User" role to AzureDatabricks
+app via Key Vault → IAM → Add role assignment.
+Waited 2-3 minutes for RBAC propagation before retrying.
