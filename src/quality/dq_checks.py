@@ -46,8 +46,8 @@ def is_quarantined(amount, time, class_label,
 
 def flag_quarantined_records(df,
                               min_amount: float = 0.0,
-                              max_amount: float = 1000000.0,
-                              max_time: float = 172800.0):
+                              max_amount: float = 1_000_000.0,
+                              max_time: float = 172_800.0):
     """
     PySpark wrapper — applies the same quality rules as is_quarantined()
     across an entire DataFrame, adding a new "_is_quarantined" column.
