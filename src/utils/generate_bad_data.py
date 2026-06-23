@@ -1,13 +1,6 @@
-"""
-Generates a corrupt transaction CSV for DQ testing.
-Injects 6 types of defects into a sample of clean data.
-Run locally: python src/utils/generate_bad_data.py
-"""
-
 import pandas as pd
 import numpy as np
 
-# Load your sample data
 df = pd.read_csv("data/raw/transactions_sample.csv")
 
 bad_rows = []
@@ -36,14 +29,17 @@ future_rows = df.sample(2).copy()
 future_rows["Time"] = 99999999999.0
 bad_rows.append(future_rows)
 
-# Mix with 50 clean rows so it looks realistic
-good_rows = df.sample(50)
+# ── FIX: explicitly reset Time to valid small values
+#    for clean rows so they don't trip the time threshold
+good_rows = df.sample(50).copy()
+good_rows["Time"] = np.random.uniform(0, 1000, size=len(good_rows))
+good_rows["Amount"] = np.random.uniform(1, 500, size=len(good_rows))
+
 corrupt_df = pd.concat(
     [good_rows] + bad_rows,
     ignore_index=True
 )
 
-# Shuffle so bad rows aren't all at the end
 corrupt_df = corrupt_df.sample(frac=1).reset_index(drop=True)
 
 output_path = "data/bad_data/transactions_corrupt.csv"
