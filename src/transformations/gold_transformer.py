@@ -144,19 +144,28 @@ def build_dim_fraud_class(spark) -> "DataFrame":
         ["fraud_class_key", "class_name", "class_description",
          "risk_level", "recommended_action"]
     )
-
+    
 def build_gold_summary(df) -> "DataFrame":
+    """
+    Builds a pre-aggregated summary table for dashboards.
+    Answers the most common analytical questions directly.
+    """
     if not PYSPARK_AVAILABLE:
         raise EnvironmentError("PySpark required")
-    
+
     return df.groupBy(
         "_ingestion_date",
         "amount_bucket",
         "is_fraud"
     ).agg(
-        F.col("transaction_id").count().alias("total_transactions"),
-        F.sum(F.col("Amount")).alias("total_amount"),
-        F.avg(F.col("Amount")).alias("avg_amount"),
-        F.max(F.col("Amount")).alias("max_amount"),
-        F.min(F.col("Amount")).alias("min_amount")
+        F.count("transaction_id")
+         .alias("transaction_count"),
+        F.round(F.sum("Amount"), 2)
+         .alias("total_amount"),
+        F.round(F.avg("Amount"), 2)
+         .alias("avg_amount"),
+        F.round(F.max("Amount"), 2)
+         .alias("max_amount"),
+        F.round(F.min("Amount"), 2)
+         .alias("min_amount"),
     ).orderBy("_ingestion_date", "amount_bucket")
