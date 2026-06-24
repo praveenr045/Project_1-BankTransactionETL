@@ -141,7 +141,7 @@ def silver_metadata_columns(df, pipeline_run_id: str):
             "_silver_processed_timestamp", F.current_timestamp()
         )
         .withColumn(
-            "_silver_pipeline_run_id", pipeline_run_id
+            "_silver_pipeline_run_id", F.lit(pipeline_run_id)
         )
         .withColumn(
             "_silver_version", F.lit("1.0")
