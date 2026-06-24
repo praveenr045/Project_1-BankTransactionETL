@@ -4,7 +4,7 @@ Tests the pure-Python-testable aspects only.
 PySpark-dependent functions tested in integration tests.
 """
 
-def amount_bucket_logic():
+def test_amount_bucket_logic():
     """
     Test amount bucketing thresholds directly
     without needing Spark.
