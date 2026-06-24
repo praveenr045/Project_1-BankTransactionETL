@@ -152,7 +152,7 @@ def build_gold_summary(df) -> "DataFrame":
     return df.groupBy(
         "_ingestion_date",
         "amount_bucket",
-        "is_Fraud"
+        "is_fraud"
     ).agg(
         F.col("transaction_id").count().alias("total_transactions"),
         F.sum(F.col("Amount")).alias("total_amount"),
