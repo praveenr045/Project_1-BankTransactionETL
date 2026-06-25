@@ -38,7 +38,7 @@ def build_fact_transactions(df) -> "DataFrame":
         F.col("Time").alias("transaction_time_seconds"),
 
         # foreign keys to dimensions
-        F.col("full_date").alias("date_key"),
+        F.col("_ingestion_date").alias("date_key"),
         F.col("amount_bucket").alias("amount_bucket_key"),
         F.col("Class").alias("fraud_class_key"),
 
@@ -173,7 +173,7 @@ def build_gold_summary(df) -> "DataFrame":
         raise EnvironmentError("PySpark required")
 
     return df.groupBy(
-        "full_date",
+        "_ingestion_date",
         "amount_bucket",
         "is_fraud"
     ).agg(
@@ -187,4 +187,4 @@ def build_gold_summary(df) -> "DataFrame":
          .alias("max_amount"),
         F.round(F.min("Amount"), 2)
          .alias("min_amount"),
-    ).orderBy("full_date", "amount_bucket")
+    ).orderBy("_ingestion_date", "amount_bucket")
