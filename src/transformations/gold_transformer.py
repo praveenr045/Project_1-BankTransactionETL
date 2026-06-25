@@ -47,10 +47,13 @@ def build_fact_transactions(df) -> "DataFrame":
 
         # derived measures
         F.round(F.col("Amount"), 2).alias("amount_rounded"),
-        F.when(F.col("Amount") > F.avg("Amount") 
-               .over(Window.partitionBy("amount_bucket")),
-               True).otherwise(False)
-               .alias("is_above_bucket_average"),
+        F.when(
+        F.row_number().over(
+            Window.partitionBy("amount_bucket")
+            ) <= 100,
+            True
+            ).otherwise(False)
+            .alias("is_above_bucket_average"),
 
         # Audit lineage
         F.col("_ingestion_timestamp"),
