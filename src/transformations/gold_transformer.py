@@ -38,7 +38,7 @@ def build_fact_transactions(df) -> "DataFrame":
         F.col("Time").alias("transaction_time_seconds"),
 
         # foreign keys to dimensions
-        F.col("_ingestion_date").alias("date_key"),
+        F.col("full_date").alias("date_key"),
         F.col("amount_bucket").alias("amount_bucket_key"),
         F.col("Class").alias("fraud_class_key"),
 
@@ -62,7 +62,7 @@ def build_fact_transactions(df) -> "DataFrame":
 
     )
 
-def build_dim_date(df) -> "DataFrame":
+def build_dim_date(spark, from_date, to_date) -> "DataFrame":
     """
     Builds date dimension from ingestion timestamps.
     Provides calendar attributes for time-based analysis.
@@ -70,21 +70,38 @@ def build_dim_date(df) -> "DataFrame":
     if not PYSPARK_AVAILABLE:
         raise EnvironmentError("PySpark required")
     
-    return df.select(
-        F.col("_ingestion_date").alias("date_key"),
-        F.col("_ingestion_date").alias("full_date"),
-        F.year(F.col("_ingestion_date")).alias("year"),
-        F.month(F.col("_ingestion_date")).alias("month"),
-        F.dayofmonth(F.col("_ingestion_date")).alias("day"),
-        F.dayofweek(F.col("_ingestion_date")).alias("day_of_week"),
-        F.quarter(F.col("_ingestion_date")).alias("quarter"),
-        F.date_format(F.col("_ingestion_date"), "MMMM").alias("month_name"),
-        F.date_format(F.col("_ingestion_date"), "EEEE").alias("day_name"),
+    df_dates = spark.sql(f"""select explode(
+        sequence(
+        to_date({from_date}),
+        to_date({to_date}),
+        interval 1 day
+        )
+    ) as full_date
+    """)
+    
+    return df_dates.select(
+        F.col("full_date").alias("date_key"),
+        F.col("full_date"),
+        F.year(F.col("full_date")).alias("year"),
+        F.month(F.col("full_date")).alias("month"),
+        F.dayofmonth(F.col("full_date")).alias("day"),
+        F.dayofweek(F.col("full_date")).alias("day_of_week"),
+        F.quarter(F.col("full_date")).alias("quarter"),
+        F.date_format(F.col("full_date"), "MMMM").alias("month_name"),
+        F.date_format(F.col("full_date"), "EEEE").alias("day_name"),
         F.when(
-            F.dayofweek(F.col("_ingestion_date")).isin([1, 7]), 
+            F.dayofweek(F.col("full_date")).isin([1, 7]), 
             True
-            ).otherwise(False).alias("is_weekend")
-    ).distinct()
+            ).otherwise(False).alias("is_weekend"),
+        F.when(
+            F.month("full_date").isin([12, 1, 2]), "Winter"
+        )
+        .when(F.month("full_date").isin([3, 4, 5]), "Spring"
+        )
+        .when(F.month("full_date").isin([6, 7, 8]), "Summer"
+        ).otherwise("Autumn")
+        .alias("season")
+    )
 
 def build_dim_amount_bucket(df) -> "DataFrame":
     """
@@ -156,7 +173,7 @@ def build_gold_summary(df) -> "DataFrame":
         raise EnvironmentError("PySpark required")
 
     return df.groupBy(
-        "_ingestion_date",
+        "full_date",
         "amount_bucket",
         "is_fraud"
     ).agg(
@@ -170,4 +187,4 @@ def build_gold_summary(df) -> "DataFrame":
          .alias("max_amount"),
         F.round(F.min("Amount"), 2)
          .alias("min_amount"),
-    ).orderBy("_ingestion_date", "amount_bucket")
+    ).orderBy("full_date", "amount_bucket")

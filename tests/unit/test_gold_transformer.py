@@ -46,4 +46,32 @@ def test_days_of_week():
     for day in weekend_days:
         assert day in [1, 7]
     for day in week_days:
-        assert day in [2,3,4,5,6]
+        assert day not in [1, 7]
+
+
+def test_date_range_coverage():
+    from datetime import date
+
+    start = date(2024, 1, 1)
+    end = date(2026, 12, 31)
+
+    days = (end - start).days + 1
+    assert days == 1096
+
+def test_season_assignment():
+    def get_season(month_num):
+        if month_num in [12, 1, 2]:
+            return "Winter"
+        elif month_num in [3, 4, 5]:
+            return "Spring"
+        elif month_num in [6, 7, 8]:
+            return "Summer"
+        else:
+            return "Autumn"
+    
+    assert get_season(12) == "Winter"
+    assert get_season(5) == "Spring"
+    assert get_season(9) == "Autumn"
+    assert get_season(11) == "Autumn"
+    assert get_season(7) == "Summer"
+
