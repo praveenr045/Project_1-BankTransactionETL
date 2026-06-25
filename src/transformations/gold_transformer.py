@@ -48,9 +48,8 @@ def build_fact_transactions(df) -> "DataFrame":
         # derived measures
         F.round(F.col("Amount"), 2).alias("amount_rounded"),
         F.when(
-        F.row_number().over(
-            Window.partitionBy("amount_bucket")
-            ) <= 100,
+            F.col("Amount") > F.avg("Amount")
+            .over(Window.partitionBy("amount_bucket")),
             True
             ).otherwise(False)
             .alias("is_above_bucket_average"),
