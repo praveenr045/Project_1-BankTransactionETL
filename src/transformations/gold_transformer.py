@@ -70,10 +70,10 @@ def build_dim_date(spark, from_date, to_date) -> "DataFrame":
     if not PYSPARK_AVAILABLE:
         raise EnvironmentError("PySpark required")
     
-    df_dates = spark.sql(f"""select explode(
+    df_dates = spark.sql(f"""SELECT explode(
         sequence(
-        to_date({from_date}),
-        to_date({to_date}),
+        to_date('{from_date}'),
+        to_date('{to_date}'),
         interval 1 day
         )
     ) as full_date
