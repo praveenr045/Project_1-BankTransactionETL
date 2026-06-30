@@ -188,3 +188,52 @@ def build_gold_summary(df) -> "DataFrame":
         F.round(F.min("Amount"), 2)
          .alias("min_amount"),
     ).orderBy("_ingestion_date", "amount_bucket")
+
+def validate_summary_totals(spark,
+                             summary_path: str,
+                             silver_df,
+                             tolerance: float = 0.0) -> bool:
+    """
+    Reconciliation check — validates that Gold summary
+    totals match Silver source exactly.
+
+    Runs after every summary write. Raises an error if
+    totals diverge beyond tolerance.
+
+    In production, this feeds a data quality dashboard
+    and triggers alerts if reconciliation fails.
+
+    Args:
+        summary_path : path to Gold summary Delta table
+        silver_df    : Silver DataFrame used as source
+        tolerance    : allowed % difference (0.0 = exact match)
+    """
+    if not PYSPARK_AVAILABLE:
+        raise EnvironmentError("PySpark required")
+
+    summary_total = spark.read \
+        .format("delta") \
+        .load(summary_path) \
+        .agg(F.sum("transaction_count")) \
+        .collect()[0][0]
+
+    silver_total = silver_df.count()
+    difference   = abs(summary_total - silver_total)
+    pct_diff     = difference / silver_total * 100
+
+    print(f"=== Reconciliation check ===")
+    print(f"Silver total  : {silver_total:,}")
+    print(f"Summary total : {summary_total:,}")
+    print(f"Difference    : {difference:,}")
+    print(f"Pct difference: {pct_diff:.4f}%")
+
+    if pct_diff <= tolerance:
+        print(f"✅ PASSED — within {tolerance}% tolerance")
+        return True
+    else:
+        raise ValueError(
+            f"RECONCILIATION FAILED — summary total {summary_total:,} "
+            f"differs from Silver {silver_total:,} by {pct_diff:.4f}%. "
+            f"Allowed tolerance: {tolerance}%. "
+            f"Check for duplicate writes or append mode misuse."
+        )
